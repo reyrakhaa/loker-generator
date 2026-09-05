@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generator Lowongan CDC</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
+
+  <style>
+    @font-face {
+      font-family: 'Consolas';
+      src: url('assets/fonts/consola.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
+
+    * {
+      font-family: 'Consolas', monospace, sans-serif;
+    }
+
+    body {
+      font-family: 'Consolas', monospace, sans-serif;
+    }
+
+    /* Sembunyikan scrollbar tapi tetap bisa discroll */
+    .scrollbar-hide::-webkit-scrollbar {
+      display: none;
+    }
+
+    .scrollbar-hide {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    .preview-wrapper {
+      transform: scale(0.35);
+      transform-origin: top left;
+      width: 1080px;
+      height: 1350px;
+    }
+
+    .preview-container {
+      width: 378px;
+      height: 472px;
+      overflow: hidden;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      background-color: #fff;
+    }
+
+    .slide-canvas {
+      width: 1080px;
+      height: 1350px;
+      position: relative;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-color: #f3f4f6;
+    }
+
+    /* KOORDINAT TEKS SLIDE 1 */
+    .pos-logo {
+      position: absolute;
+      top: 209px;
+      left: 107px;
+      width: 206px;
+      height: 206px;
+      object-fit: scale-down;
+    }
+
+    .pos-nama-pt {
+      position: absolute;
+      top: 203px;
+      left: 378px;
+      width: 600px;
+      font-size: 40px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .pos-sosmed {
+      position: absolute;
+      top: 258px;
+      left: 377px;
+      width: 600px;
+      font-size: 30px;
+      font-weight: 500;
+      color: #ffffff;
+    }
+
+    .pos-jenis {
+      position: absolute;
+      top: 515px;
+      left: 100px;
+      width: 880px;
+      text-align: center;
+      font-size: 40px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: 1px;
+    }
+
+    .pos-penempatan {
+      position: absolute;
+      top: 674px;
+      left: 96px;
+      width: 400px;
+      font-size: 27.77px;
+      font-weight: 700;
+      color: #1a1a1a;
+    }
+
+    .pos-deadline {
+      position: absolute;
+      top: 775.5px;
+      left: 96px;
+      width: 400px;
+      font-size: 27.77px;
+      font-weight: 700;
+      color: #1a1a1a;
+    }
+
+    .pos-posisi {
+      position: absolute;
+      top: 675px;
+      left: 645px;
+      width: 440px;
+      font-size: 27.77px;
+      font-weight: 700;
+      color: #1a1a1a;
+      white-space: pre-wrap;
+      line-height: 1.4;
+    }
+
+    .pos-qr {
+      position: absolute;
+      top: 900px;
+      left: 96px;
+      width: 184px;
+      height: 184px;
+      object-fit: cover;
+    }
+
+    .pos-link {
+      position: absolute;
+      top: 976px;
+      left: 310px;
+      width: 300px;
+      font-size: 22px;
+      font-weight: 500;
+      word-break: break-all;
+      line-height: 1.2;
+      color: #4b5563;
+    }
+
+    /* KOORDINAT FLYER SLIDE 2 */
+    .pos-flyer-frame {
+      position: absolute;
+      top: 180px;
+      bottom: 180px;
+      left: 60px;
+      right: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    .pos-flyer-img {
+      max-width: 100%;
+      max-height: 100%;
+      border-radius: 24px;
+      box-shadow: 10px 10px 15px rgba(11, 5, 16, 0.25);
+    }
+  </style>
+</head>
+
+<body class="bg-gray-100 min-h-screen p-4 lg:p-6 lg:pb-12">
+
+  <!-- WRAPPER UTAMA: Mepet ke kiri dan responsif -->
+  <div class="w-full flex flex-col lg:flex-row gap-6 items-start">
+
+    <!-- KIRI: FORM INPUT (Truly FIXED di desktop, scrollable tersendiri) -->
+    <div
+      class="w-full lg:w-[500px] lg:fixed lg:top-6 lg:left-6 lg:bottom-12 lg:overflow-y-auto scrollbar-hide bg-white p-6 rounded-xl shadow-lg z-10">
+      <h2 class="text-2xl font-bold text-gray-800 border-b pb-3 mb-4">Input Data</h2>
+
+      <div class="space-y-4">
+        <div class="bg-gray-50 p-4 rounded border space-y-3">
+          <h3 class="font-bold text-gray-700">Data Slide Utama</h3>
+
+          <div>
+            <label class="block text-xs font-semibold mb-1">Logo Perusahaan</label>
+            <input type="file" id="inLogo" accept="image/*" class="w-full text-xs border rounded p-1">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1">Nama Perusahaan</label>
+            <input type="text" id="inNama" placeholder="Nama Perusahaan" class="w-full border p-2 text-sm rounded">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1">Sosial Media (Opsional)</label>
+            <input type="text" id="inSosmed" placeholder="@cdcbimawa atau -" class="w-full border p-2 text-sm rounded">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1">Jenis Lowongan</label>
+            <select id="inJenis" class="w-full border p-2 text-sm rounded">
+              <option value="kerja">Lowongan Kerja</option>
+              <option value="magang">Lowongan Magang</option>
+            </select>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs font-semibold mb-1">Penempatan</label>
+              <input type="text" id="inPenempatan" placeholder="Yogyakarta" class="w-full border p-2 text-sm rounded">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1">Deadline</label>
+              <input type="text" id="inDeadline" placeholder="31 Mei 2026" class="w-full border p-2 text-sm rounded">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1">Daftar Posisi (Bisa di-enter)</label>
+            <textarea id="inPosisi" rows="4" placeholder="1. Posisi A&#10;2. Posisi B"
+              class="w-full border p-2 text-sm rounded"></textarea>
+          </div>
+
+          <!-- OPSI QR CODE & LINK -->
+          <div class="border-t pt-3 mt-3">
+            <label class="block text-xs font-semibold mb-2">Sumber QR Code</label>
+            <div class="flex gap-4 mb-3 text-sm">
+              <label class="flex items-center gap-1 cursor-pointer">
+                <input type="radio" name="qrOption" value="upload" checked> Upload Gambar
+              </label>
+              <label class="flex items-center gap-1 cursor-pointer">
+                <input type="radio" name="qrOption" value="generate"> Dari Link
+              </label>
+            </div>
+
+            <div class="grid grid-cols-1 gap-3">
+              <div id="wrapUploadQr">
+                <label class="block text-xs font-semibold mb-1">Upload File QR</label>
+                <input type="file" id="inQR" accept="image/*" class="w-full text-xs border rounded p-1 bg-white">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold mb-1">Link Detail</label>
+                <div class="flex gap-2">
+                  <input type="text" id="inLink" placeholder="https://cdc.uad.ac.id/..."
+                    class="w-full border p-2 text-sm rounded">
+                  <button type="button" id="btnGenQR"
+                    class="hidden bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold px-3 py-2 rounded whitespace-nowrap">
+                    Generate
+                  </button>
+                </div>
+                <p id="hintGenerate" class="text-[10px] text-gray-500 mt-1 hidden">Ketik tautan link lalu klik tombol
+                  <b>Generate</b>.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-blue-50 p-4 rounded border border-blue-100 space-y-3">
+          <h3 class="font-bold text-gray-700">Poster/Flyer Perusahaan</h3>
+          <p class="text-xs text-gray-500">Bisa pilih lebih dari 1 gambar sekaligus.</p>
+          <div>
+            <input type="file" id="inFlyers" accept="image/*" multiple
+              class="w-full text-sm border rounded p-2 bg-white">
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-2 mt-4">
+          <button id="btnDownloadAll"
+            class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-lg shadow transition">
+            Download Semua Slide (ZIP)
+          </button>
+          <button id="btnDownloadAllPng"
+            class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-lg shadow transition">
+            Download Semua Slide (PNG Terpisah)
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- KANAN: LIVE PREVIEW AREA (Dinamis: Rata Kiri jika 1 slide, Rata Tengah jika ada flyer) -->
+    <div id="previewArea" class="flex-1 w-full lg:ml-[524px] flex flex-wrap gap-6 items-start justify-start">
+
+      <!-- SLIDE 1 (UTAMA) -->
+      <div>
+        <div class="flex justify-between items-center mb-2">
+          <h3 class="font-bold text-gray-700">Slide 1: Utama</h3>
+          <!-- Tombol Download Individual Slide 1 -->
+          <button onclick="downloadSingleSlide('slideUtama', 'Slide_1_Utama.png')"
+            class="bg-blue-500 hover:bg-blue-600 text-white text-xs px-3 py-1.5 rounded-md font-semibold transition">
+            Unduh Slide Ini (PNG)
+          </button>
+        </div>
+
+        <div class="preview-container">
+          <div class="preview-wrapper">
+            <div id="slideUtama" class="slide-canvas target-export"
+              style="background-image: url('assets/template-utama-kerja.png');">
+              <img id="outLogo" class="pos-logo" style="display: none;" />
+              <div id="outNama" class="pos-nama-pt">Nama Perusahaan</div>
+              <div id="outSosmed" class="pos-sosmed">-</div>
+              <div id="outPenempatan" class="pos-penempatan">-</div>
+              <div id="outDeadline" class="pos-deadline">-</div>
+              <div id="outPosisi" class="pos-posisi">-</div>
+
+              <!-- QR Code Canvas -->
+              <img id="outQR" class="pos-qr" style="display: none;" />
+
+              <div id="outLink" class="pos-link">-</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTAINER SLIDE FLYER (Otomatis bersebelahan ke kanan & wrap ke bawah) -->
+      <div id="flyerContainer" class="contents"></div>
+
+    </div>
+  </div>
+
+  <!-- FOOTER COPYRIGHT (Fixed di bagian paling bawah layar) -->
+  <footer
+    class="fixed bottom-0 left-0 w-full text-center text-xs text-gray-500 py-2.5 bg-gray-100/90 backdrop-blur-sm border-t border-gray-200/80 z-20">
+    <p>&copy; <span id="currentYear"></span> ReyRakha Project. All rights reserved.</p>
+  </footer>
+
+  <!-- MODAL KONFIRMASI HAPUS (CENTER SCREEN) -->
+  <div id="deleteModal"
+    class="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 hidden transition-opacity">
+    <div
+      class="bg-white rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl border border-gray-100 text-center animate-scale-up">
+      <div class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-3">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+          stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+      </div>
+      <h3 class="text-lg font-bold text-gray-800 mb-1">Hapus Slide?</h3>
+      <p id="deleteModalText" class="text-xs text-gray-500 mb-5">Apakah Anda yakin ingin menghapus slide ini?</p>
+      <div class="flex gap-3 justify-center">
+        <button type="button" id="btnCancelDelete"
+          class="flex-1 py-2 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition">
+          Batal
+        </button>
+        <button type="button" id="btnConfirmDelete"
+          class="flex-1 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg shadow transition">
+          Ya, Hapus
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('currentYear').textContent = new Date().getFullYear();
+    const bindText = (inputId, outputId, defaultText) => {
+      document.getElementById(inputId).addEventListener('input', (e) => {
+        document.getElementById(outputId).innerText = e.target.value || defaultText;
+      });
+    };
+
+    bindText('inNama', 'outNama', 'NAMA PERUSAHAAN');
+    bindText('inSosmed', 'outSosmed', '-');
+    bindText('inPenempatan', 'outPenempatan', '-');
+    bindText('inDeadline', 'outDeadline', '-');
+    bindText('inPosisi', 'outPosisi', '-');
+    bindText('inLink', 'outLink', '-');
+
+    // TEMA KERJA / MAGANG
+    const inJenis = document.getElementById('inJenis');
+    const slideUtama = document.getElementById('slideUtama');
+    const outNama = document.getElementById('outNama');
+    const outSosmed = document.getElementById('outSosmed');
+    const outPenempatan = document.getElementById('outPenempatan');
+    const outDeadline = document.getElementById('outDeadline');
+    const outPosisi = document.getElementById('outPosisi');
+    const outLink = document.getElementById('outLink');
+
+    function updateThemeColors(isKerja) {
+      const textColor = isKerja ? '#ffffff' : '#000000';
+      const subTextColor = isKerja ? '#ffffff' : '#000000'; // warna pendukung (sosmed/link)
+
+      outNama.style.color = textColor;
+      outSosmed.style.color = subTextColor;
+      outPenempatan.style.color = textColor;
+      outDeadline.style.color = textColor;
+      outPosisi.style.color = textColor;
+      outLink.style.color = subTextColor;
+    }
+
+    inJenis.addEventListener('change', function (e) {
+      const isKerja = e.target.value === 'kerja';
+
+      updateThemeColors(isKerja);
+
+      slideUtama.style.backgroundImage = isKerja
+        ? "url('assets/template-utama-kerja.png')"
+        : "url('assets/template-utama-magang.png')";
+
+      const flyerSlides = document.querySelectorAll('.flyer-slide');
+      flyerSlides.forEach(slide => {
+        slide.style.backgroundImage = isKerja
+          ? "url('assets/template-flyer-kerja.png')"
+          : "url('assets/template-flyer-magang.png')";
+      });
+    });
+
+    // Inisialisasi warna saat pertama kali dibuka
+    updateThemeColors(inJenis.value === 'kerja');
+
+    // BINDING LOGO
+    document.getElementById('inLogo').addEventListener('change', function (e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = document.getElementById('outLogo');
+          img.src = e.target.result;
+          img.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // ==========================================
+    // LOGIKA QR CODE
+    // ==========================================
+    const qrOptions = document.getElementsByName('qrOption');
+    const wrapUploadQr = document.getElementById('wrapUploadQr');
+    const hintGenerate = document.getElementById('hintGenerate');
+    const inQR = document.getElementById('inQR');
+    const outQR = document.getElementById('outQR');
+    const inLink = document.getElementById('inLink');
+    const btnGenQR = document.getElementById('btnGenQR');
+
+    const renderQR = async (text) => {
+      if (!text || text.trim() === '') {
+        alert('Silakan isi tautan link terlebih dahulu.');
+        return;
+      }
+      try {
+        const qrCode = new QRCodeStyling({
+          width: 320,
+          height: 320,
+          data: text.trim(),
+          image: "assets/logo-uad.png",
+          dotsOptions: {
+            color: "#000000",
+            type: "square"            // Pixel badan kotak biasa
+          },
+          cornersSquareOptions: {
+            color: "#000000",
+            type: "square"    // Sudut daun asimetris (sisi beda lengkungan)
+          },
+          cornersDotOptions: {
+            color: "#000000",
+            type: "square"    // Titik tengah serasi dengan bingkai
+          },
+          imageOptions: {
+            crossOrigin: "anonymous",
+            margin: 4,
+            imageSize: 0.3
+          },
+          backgroundOptions: {
+            color: "#ffffff"
+          }
+        });
+
+        const rawBlob = await qrCode.getRawData("png");
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          outQR.src = reader.result;
+          outQR.style.display = 'block';
+        };
+        reader.readAsDataURL(rawBlob);
+
+      } catch (err) {
+        console.error("Gagal generate QR:", err);
+        alert("Gagal membuat QR Code: " + (err.message || err));
+      }
+    };
+
+
+
+
+    qrOptions.forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        if (e.target.value === 'upload') {
+          wrapUploadQr.style.display = 'block';
+          btnGenQR.classList.add('hidden');
+          hintGenerate.style.display = 'none';
+
+          if (inQR.files && inQR.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+              outQR.src = ev.target.result;
+              outQR.style.display = 'block';
+            };
+            reader.readAsDataURL(inQR.files[0]);
+          } else {
+            outQR.style.display = 'none';
+          }
+        } else {
+          wrapUploadQr.style.display = 'none';
+          btnGenQR.classList.remove('hidden');
+          hintGenerate.style.display = 'block';
+          outQR.style.display = 'none';
+        }
+      });
+    });
+
+    btnGenQR.addEventListener('click', () => {
+      renderQR(inLink.value);
+    });
+
+    inQR.addEventListener('change', function (e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          outQR.src = ev.target.result;
+          outQR.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // ==========================================
+    // MULTIPLE FLYERS (SLIDE 2++) DENGAN PENGATUR URUTAN & HAPUS
+    // ==========================================
+    const inFlyers = document.getElementById('inFlyers');
+    const flyerContainer = document.getElementById('flyerContainer');
+    let flyerList = []; // menyimpan array data URL flyer
+
+    function moveFlyer(index, direction) {
+      const newIndex = index + direction;
+      if (newIndex < 0 || newIndex >= flyerList.length) return;
+
+      // Tukar posisi flyer
+      const temp = flyerList[index];
+      flyerList[index] = flyerList[newIndex];
+      flyerList[newIndex] = temp;
+
+      renderFlyers();
+    }
+
+    let flyerToDeleteIndex = null;
+    const deleteModal = document.getElementById('deleteModal');
+    const deleteModalText = document.getElementById('deleteModalText');
+    const btnCancelDelete = document.getElementById('btnCancelDelete');
+    const btnConfirmDelete = document.getElementById('btnConfirmDelete');
+
+    function deleteFlyer(index) {
+      flyerToDeleteIndex = index;
+      deleteModalText.textContent = `Apakah Anda yakin ingin menghapus Slide ${index + 2}?`;
+      deleteModal.classList.remove('hidden');
+    }
+
+    btnCancelDelete.addEventListener('click', () => {
+      deleteModal.classList.add('hidden');
+      flyerToDeleteIndex = null;
+    });
+
+    btnConfirmDelete.addEventListener('click', () => {
+      if (flyerToDeleteIndex !== null) {
+        flyerList.splice(flyerToDeleteIndex, 1);
+        renderFlyers();
+        deleteModal.classList.add('hidden');
+        flyerToDeleteIndex = null;
+      }
+    });
+
+    const previewArea = document.getElementById('previewArea');
+
+    function renderFlyers() {
+      flyerContainer.innerHTML = '';
+
+      // Jika tidak ada flyer (hanya slide utama) -> Rata Kiri
+      // Jika ada flyer tambahan -> Rata Tengah
+      if (flyerList.length === 0) {
+        previewArea.classList.remove('justify-center');
+        previewArea.classList.add('justify-start');
+      } else {
+        previewArea.classList.remove('justify-start');
+        previewArea.classList.add('justify-center');
+      }
+
+      const currentFlyerBg = inJenis.value === 'kerja'
+        ? "url('assets/template-flyer-kerja.png')"
+        : "url('assets/template-flyer-magang.png')";
+
+      flyerList.forEach((imgSrc, index) => {
+        const slideIndex = index + 2;
+        const slideElementId = `slideFlyer_${slideIndex}`;
+
+        const isFirst = index === 0;
+        const isLast = index === flyerList.length - 1;
+
+        const slideDiv = document.createElement('div');
+        slideDiv.innerHTML = `
+          <div class="flex justify-between items-center mb-2">
+            <div class="flex items-center gap-2">
+              <h3 class="font-bold text-gray-700">Slide ${slideIndex}: Flyer</h3>
+              <div class="flex items-center gap-1">
+                <button type="button" onclick="moveFlyer(${index}, -1)" 
+                  class="p-0.5 text-gray-700 hover:text-blue-600 transition disabled:opacity-20 disabled:cursor-not-allowed"
+                  title="Pindah ke Atas / Sebelumnya" ${isFirst ? 'disabled' : ''}>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />
+                  </svg>
+                </button>
+                <button type="button" onclick="moveFlyer(${index}, 1)" 
+                  class="p-0.5 text-gray-700 hover:text-blue-600 transition disabled:opacity-20 disabled:cursor-not-allowed"
+                  title="Pindah ke Bawah / Selanjutnya" ${isLast ? 'disabled' : ''}>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                <button type="button" onclick="deleteFlyer(${index})" 
+                  class="p-0.5 text-gray-400 hover:text-red-600 transition ml-0.5"
+                  title="Hapus Slide Ini">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <button onclick="downloadSingleSlide('${slideElementId}', 'Slide_${slideIndex}_Flyer.png')" class="bg-blue-500 hover:bg-blue-600 text-white text-xs px-3 py-1.5 rounded-md font-semibold transition">
+              Unduh Slide Ini (PNG)
+            </button>
+          </div>
+          <div class="preview-container">
+            <div class="preview-wrapper">
+              <div id="${slideElementId}" class="slide-canvas target-export flyer-slide" style="background-image: ${currentFlyerBg};">
+                <div class="pos-flyer-frame">
+                  <img src="${imgSrc}" class="pos-flyer-img" />
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        flyerContainer.appendChild(slideDiv);
+      });
+    }
+
+    inFlyers.addEventListener('change', function (e) {
+      const files = Array.from(e.target.files);
+      flyerList = [];
+
+      if (files.length === 0) {
+        renderFlyers();
+        return;
+      }
+
+      let loadedCount = 0;
+      files.forEach((file, index) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          flyerList[index] = ev.target.result;
+          loadedCount++;
+          if (loadedCount === files.length) {
+            renderFlyers();
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+
+    // ==========================================
+    // RENDER ENGINE: HTML2CANVAS (STABIL, BEBAS EVENT ERROR & PRESISI)
+    // ==========================================
+    async function renderSlideToCanvas(elementId) {
+      const node = document.getElementById(elementId);
+
+      return await html2canvas(node, {
+        width: 1080,
+        height: 1350,
+        scale: 1,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: null,
+        onclone: (clonedDoc) => {
+          // Reset preview-wrapper pada dokumen kloning agar dirender di ukuran aslinya 1080x1350 tanpa scale(0.45)
+          const clonedNode = clonedDoc.getElementById(elementId);
+          if (clonedNode) {
+            const wrapper = clonedNode.closest('.preview-wrapper');
+            if (wrapper) {
+              wrapper.style.transform = 'none';
+              wrapper.style.width = '1080px';
+              wrapper.style.height = '1350px';
+            }
+          }
+        }
+      });
+    }
+
+    // ==========================================
+    // FUNGSI DOWNLOAD INDIVIDUAL (PER SLIDE)
+    // ==========================================
+    async function downloadSingleSlide(elementId, filename) {
+      try {
+        const canvas = await renderSlideToCanvas(elementId);
+        const dataUrl = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.download = filename;
+        link.href = dataUrl;
+        link.click();
+      } catch (err) {
+        console.error("Detail error downloadSingleSlide:", err);
+        alert("Gagal mengunduh slide ini: " + (err.message || err));
+      }
+    }
+
+    // ==========================================
+    // FUNGSI DOWNLOAD SEMUA (ZIP)
+    // ==========================================
+    document.getElementById('btnDownloadAll').addEventListener('click', async () => {
+      const btn = document.getElementById('btnDownloadAll');
+      btn.innerText = "⏳ Sedang memproses gambar...";
+      btn.disabled = true;
+
+      const zip = new JSZip();
+      const slides = document.querySelectorAll('.target-export');
+      let slideCount = 1;
+
+      try {
+        for (let slide of slides) {
+          const canvas = await renderSlideToCanvas(slide.id);
+          const dataUrl = canvas.toDataURL('image/png');
+          const base64Data = dataUrl.split(',')[1];
+          zip.file(`Slide_${slideCount}.png`, base64Data, { base64: true });
+          slideCount++;
+        }
+
+        const content = await zip.generateAsync({ type: "blob" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(content);
+        link.download = `Poster_Lowongan.zip`;
+        link.click();
+
+      } catch (err) {
+        console.error("Detail error download ZIP:", err);
+        alert("Gagal mengunduh gambar ZIP: " + (err.message || err));
+      } finally {
+        btn.innerText = "Download Semua Slide (ZIP)";
+        btn.disabled = false;
+      }
+    });
+
+    // ==========================================
+    // FUNGSI DOWNLOAD SEMUA SATU-SATU (PNG LANGSUNG TANPA ZIP)
+    // ==========================================
+    document.getElementById('btnDownloadAllPng').addEventListener('click', async () => {
+      const btn = document.getElementById('btnDownloadAllPng');
+      btn.innerText = "⏳ Sedang mendownload...";
+      btn.disabled = true;
+
+      const slides = document.querySelectorAll('.target-export');
+      let slideCount = 1;
+
+      try {
+        for (let slide of slides) {
+          const canvas = await renderSlideToCanvas(slide.id);
+          const dataUrl = canvas.toDataURL('image/png');
+
+          const filename = slideCount === 1 ? 'Slide_1_Utama.png' : `Slide_${slideCount}_Flyer.png`;
+          const link = document.createElement('a');
+          link.download = filename;
+          link.href = dataUrl;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+
+          slideCount++;
+          // Jeda singkat agar browser dapat memproses multiple downloads tanpa diblokir
+          await new Promise(resolve => setTimeout(resolve, 350));
+        }
+      } catch (err) {
+        console.error("Detail error download PNG:", err);
+        alert("Gagal mengunduh gambar PNG: " + (err.message || err));
+      } finally {
+        btn.innerText = "Download Semua Slide (PNG Terpisah)";
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+
+</html>
