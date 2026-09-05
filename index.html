@@ -235,32 +235,39 @@
             <label class="block text-xs font-semibold mb-2">Sumber QR Code</label>
             <div class="flex gap-4 mb-3 text-sm">
               <label class="flex items-center gap-1 cursor-pointer">
-                <input type="radio" name="qrOption" value="upload" checked> Upload Gambar
+                <input type="radio" name="qrOption" value="generate" checked> Dari Link
               </label>
               <label class="flex items-center gap-1 cursor-pointer">
-                <input type="radio" name="qrOption" value="generate"> Dari Link
+                <input type="radio" name="qrOption" value="upload"> Upload Gambar
               </label>
             </div>
 
             <div class="grid grid-cols-1 gap-3">
-              <div id="wrapUploadQr">
+              <div id="wrapUploadQr" class="hidden">
                 <label class="block text-xs font-semibold mb-1">Upload File QR</label>
                 <input type="file" id="inQR" accept="image/*" class="w-full text-xs border rounded p-1 bg-white">
               </div>
 
-              <div>
-                <label class="block text-xs font-semibold mb-1">Link Detail</label>
+              <div id="wrapQrUrl">
+                <label class="block text-xs font-semibold mb-1">Link QR Code</label>
                 <div class="flex gap-2">
-                  <input type="text" id="inLink" placeholder="https://cdc.uad.ac.id/..."
+                  <input type="text" id="inQrUrl" placeholder="https://cdc.uad.ac.id/..."
                     class="w-full border p-2 text-sm rounded">
                   <button type="button" id="btnGenQR"
-                    class="hidden bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold px-3 py-2 rounded whitespace-nowrap">
+                    class="bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold px-3 py-2 rounded whitespace-nowrap">
                     Generate
                   </button>
                 </div>
-                <p id="hintGenerate" class="text-[10px] text-gray-500 mt-1 hidden">Ketik tautan link lalu klik tombol
+                <p id="hintGenerate" class="text-[10px] text-gray-500 mt-1">Ketik tautan link lalu klik tombol
                   <b>Generate</b>.
                 </p>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold mb-1">Link</label>
+                <input type="text" id="inLink" placeholder="https://cdc.uad.ac.id/... atau bit.ly/..."
+                  class="w-full border p-2 text-sm rounded">
+                <p class="text-[10px] text-gray-500 mt-1">Teks tautan ini yang akan ditampilkan pada slide.</p>
               </div>
             </div>
           </div>
@@ -437,15 +444,17 @@
     // ==========================================
     const qrOptions = document.getElementsByName('qrOption');
     const wrapUploadQr = document.getElementById('wrapUploadQr');
+    const wrapQrUrl = document.getElementById('wrapQrUrl');
     const hintGenerate = document.getElementById('hintGenerate');
     const inQR = document.getElementById('inQR');
     const outQR = document.getElementById('outQR');
     const inLink = document.getElementById('inLink');
+    const inQrUrl = document.getElementById('inQrUrl');
     const btnGenQR = document.getElementById('btnGenQR');
 
     const renderQR = async (text) => {
       if (!text || text.trim() === '') {
-        alert('Silakan isi tautan link terlebih dahulu.');
+        alert('Silakan isi link QR Code terlebih dahulu.');
         return;
       }
       try {
@@ -491,15 +500,11 @@
       }
     };
 
-
-
-
     qrOptions.forEach(radio => {
       radio.addEventListener('change', (e) => {
         if (e.target.value === 'upload') {
           wrapUploadQr.style.display = 'block';
-          btnGenQR.classList.add('hidden');
-          hintGenerate.style.display = 'none';
+          wrapQrUrl.classList.add('hidden');
 
           if (inQR.files && inQR.files[0]) {
             const reader = new FileReader();
@@ -513,15 +518,29 @@
           }
         } else {
           wrapUploadQr.style.display = 'none';
-          btnGenQR.classList.remove('hidden');
-          hintGenerate.style.display = 'block';
+          wrapQrUrl.classList.remove('hidden');
           outQR.style.display = 'none';
         }
       });
     });
 
+    // Jika user mengetik Link QR Code dan Teks Tautan di slide masih kosong, otomatis bantu isi teks tautan
+    inQrUrl.addEventListener('input', (e) => {
+      if (!inLink.value || inLink.dataset.autoFilled === 'true') {
+        inLink.value = e.target.value;
+        inLink.dataset.autoFilled = 'true';
+        document.getElementById('outLink').innerText = e.target.value || '-';
+      }
+    });
+
+    inLink.addEventListener('input', () => {
+      // Jika user mengedit teks tautan secara manual, lepaskan status autofill
+      inLink.dataset.autoFilled = 'false';
+    });
+
     btnGenQR.addEventListener('click', () => {
-      renderQR(inLink.value);
+      const urlToGenerate = inQrUrl.value || inLink.value;
+      renderQR(urlToGenerate);
     });
 
     inQR.addEventListener('change', function (e) {
